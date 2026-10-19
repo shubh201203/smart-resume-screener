@@ -33,7 +33,7 @@ flowchart LR
      ```text
      postgresql://username:password@ep-xxxx-xxxx-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
      ```
-   - *Note*: If Neon supplies a URL starting with `postgres://`, the backend automatically normalizes it to `postgresql://`.
+   - *Note*: Whether Neon supplies `postgres://`, `postgresql://`, or `postgresql+psycopg://` (Psycopg 3), the backend automatically normalizes it to `postgresql+psycopg2://` to use the pre-installed `psycopg2-binary` driver.
 
 ---
 

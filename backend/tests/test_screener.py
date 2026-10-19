@@ -349,10 +349,34 @@ def test_health_check_endpoint():
     assert res_api_health.json()["status"] == "healthy"
 
 def test_database_url_postgres_normalization():
-    neon_url = "postgres://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require"
-    normalized = neon_url.replace("postgres://", "postgresql://", 1) if neon_url.startswith("postgres://") else neon_url
-    assert normalized.startswith("postgresql://")
-    assert "sslmode=require" in normalized
+    from app.database.session import normalize_database_url
+    from sqlalchemy import create_engine
+
+    # 1. postgres:// legacy format
+    u1 = normalize_database_url("postgres://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    assert u1.startswith("postgresql+psycopg2://")
+    assert "sslmode=require" in u1
+
+    # 2. postgresql:// standard format
+    u2 = normalize_database_url("postgresql://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    assert u2.startswith("postgresql+psycopg2://")
+
+    # 3. postgresql+psycopg:// (Psycopg 3 format from Neon UI) -> mapped to installed psycopg2
+    u3 = normalize_database_url("postgresql+psycopg://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    assert u3.startswith("postgresql+psycopg2://")
+
+    # 4. postgresql+psycopg2:// explicit format
+    u4 = normalize_database_url("postgresql+psycopg2://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    assert u4.startswith("postgresql+psycopg2://")
+
+    # 5. SQLite remains unchanged
+    u5 = normalize_database_url("sqlite:///./local_test.db")
+    assert u5 == "sqlite:///./local_test.db"
+
+    # 6. Verify SQLAlchemy engine creates with psycopg2 driver without missing psycopg3 error
+    engine = create_engine(u3)
+    assert engine.dialect.name == "postgresql"
+    assert engine.dialect.driver == "psycopg2"
 
 def test_cors_origins_configuration():
     from app.core.config import Settings
