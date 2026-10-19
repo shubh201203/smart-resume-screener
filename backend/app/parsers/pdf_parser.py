@@ -64,12 +64,32 @@ def sanitize_extracted_text(text: str) -> str:
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitizes user-provided filename to prevent directory traversal and filesystem attacks.
+    Extracts basename, strips path separators, and replaces unsafe characters.
+    """
+    if not filename or not filename.strip():
+        return "resume.pdf"
+    # Take only the base filename (strips any path components)
+    clean_name = re.sub(r'[\r\n\t]', '', filename.strip())
+    clean_name = clean_name.replace('\\', '/').split('/')[-1]
+    # Replace anything other than alphanumeric, underscore, dot, hyphen
+    clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', clean_name)
+    # Prevent leading dot / hidden file or empty name
+    clean_name = clean_name.lstrip('.')
+    return clean_name or "uploaded_resume.pdf"
+
 def parse_resume_file(filename: str, file_bytes: bytes) -> str:
     """Extract plain text based on file extension with type validation."""
-    if not filename:
+    if not filename or not filename.strip():
         raise ValueError("Filename cannot be empty.")
 
-    ext = filename.lower().split('.')[-1]
+    clean_name = sanitize_filename(filename)
+    if '.' not in clean_name:
+        raise ValueError("Filename missing valid extension. Supported formats are .pdf and .txt.")
+
+    ext = clean_name.lower().split('.')[-1]
     if ext == 'pdf':
         return extract_text_from_pdf(file_bytes)
     elif ext in ['txt', 'md']:

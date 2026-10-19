@@ -13,14 +13,27 @@ export const CandidateCompareModal: React.FC<CandidateCompareModalProps> = ({ ca
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ComparisonResult | null>(null);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   useEffect(() => {
     const loadComparison = async () => {
       try {
         setLoading(true);
+        setErrorMessage(null);
         const res = await api.compareCandidates(candidateIds);
         setData(res);
       } catch (err: any) {
-        alert(`Failed to load candidate comparison: ${err.message}`);
+        setErrorMessage(err.message || 'Failed to load candidate comparison');
       } finally {
         setLoading(false);
       }
@@ -31,7 +44,12 @@ export const CandidateCompareModal: React.FC<CandidateCompareModalProps> = ({ ca
   if (!candidateIds.length) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="compare-modal-title"
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+    >
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between">
@@ -40,13 +58,14 @@ export const CandidateCompareModal: React.FC<CandidateCompareModalProps> = ({ ca
               <Columns className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Side-by-Side Candidate Comparison</h2>
+              <h2 id="compare-modal-title" className="text-lg font-bold text-white">Side-by-Side Candidate Comparison</h2>
               <p className="text-xs text-slate-400">Evaluating {candidateIds.length} candidate profiles against role requirements</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
+            aria-label="Close comparison modal"
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -55,7 +74,20 @@ export const CandidateCompareModal: React.FC<CandidateCompareModalProps> = ({ ca
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6">
-          {loading ? (
+          {errorMessage ? (
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+              <button
+                onClick={onClose}
+                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs"
+              >
+                Close
+              </button>
+            </div>
+          ) : loading ? (
             <div className="py-20 text-center text-slate-400 flex flex-col items-center space-y-3">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
               <p className="text-sm font-medium">Generating candidate trade-off matrix...</p>

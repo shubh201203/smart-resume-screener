@@ -49,7 +49,10 @@ async def upload_and_process_resume(
     filename: str,
     file_bytes: bytes
 ) -> Candidate:
-    # 1. SHA-256 Hash Duplicate Check
+    # 1. Sanitize filename & SHA-256 Hash Duplicate Check
+    from app.parsers import sanitize_filename
+    clean_filename = sanitize_filename(filename)
+
     file_hash = calculate_sha256(file_bytes)
     existing_resume = db.query(Resume).filter(
         Resume.project_id == project_id,
@@ -57,17 +60,17 @@ async def upload_and_process_resume(
     ).first()
 
     if existing_resume:
-        raise ValueError(f"Duplicate resume detected. '{filename}' has already been uploaded to this project.")
+        raise ValueError(f"Duplicate resume detected. '{clean_filename}' has already been uploaded to this project.")
 
     # 2. Extract Plain Text
-    raw_text = parse_resume_file(filename, file_bytes)
+    raw_text = parse_resume_file(clean_filename, file_bytes)
 
     # 3. Resume Quality Check
     q_score, q_label, q_factors = evaluate_resume_quality(raw_text)
 
     resume = Resume(
         project_id=project_id,
-        filename=filename,
+        filename=clean_filename,
         file_hash=file_hash,
         file_size=len(file_bytes),
         raw_text=raw_text,

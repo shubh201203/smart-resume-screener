@@ -113,14 +113,50 @@ export const SettingsPage: React.FC = () => {
               className="w-full cursor-pointer accent-indigo-500"
             />
           </div>
+
+          <div>
+            <div className="flex justify-between font-semibold text-slate-300 mb-1">
+              <span>Education Alignment Weight</span>
+              <span className="text-cyan-400 font-bold">{weights.education}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="20"
+              value={weights.education}
+              onChange={(e) => setWeights({ ...weights, education: Number(e.target.value) })}
+              className="w-full cursor-pointer accent-indigo-500"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between font-semibold text-slate-300 mb-1">
+              <span>Certifications Fit Weight</span>
+              <span className="text-pink-400 font-bold">{weights.certifications}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="20"
+              value={weights.certifications}
+              onChange={(e) => setWeights({ ...weights, certifications: Number(e.target.value) })}
+              className="w-full cursor-pointer accent-indigo-500"
+            />
+          </div>
         </div>
+
+        {saved && (
+          <div role="status" className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-medium">
+            Default scoring weights saved locally. For project-specific ranking recalculations, configure weights directly within the target Project Workspace.
+          </div>
+        )}
 
         <button
           onClick={handleSave}
           className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl flex items-center space-x-2 cursor-pointer shadow-lg shadow-indigo-600/20"
         >
           <Save className="w-4 h-4" />
-          <span>{saved ? 'Scoring Weights Saved!' : 'Save Configured Weights'}</span>
+          <span>Save Default Preset</span>
         </button>
       </div>
 

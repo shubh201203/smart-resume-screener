@@ -13,12 +13,12 @@ app = FastAPI(
     description="Production-Grade AI Recruitment & Smart Resume Screening Platform"
 )
 
-# Enable CORS Middleware
+# Enable CORS Middleware with configurable origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

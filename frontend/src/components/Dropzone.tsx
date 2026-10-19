@@ -43,13 +43,25 @@ export const Dropzone: React.FC<DropzoneProps> = ({ projectId, onUploadSuccess }
 
   const addValidFiles = (files: File[]) => {
     setErrorMsg(null);
-    const valid = files.filter((f) => {
+    const valid: File[] = [];
+    let oversized = false;
+    let invalidExt = false;
+
+    files.forEach((f) => {
       const ext = f.name.toLowerCase().split('.').pop();
-      return ext === 'pdf' || ext === 'txt';
+      if (ext !== 'pdf' && ext !== 'txt') {
+        invalidExt = true;
+      } else if (f.size > 10 * 1024 * 1024) {
+        oversized = true;
+      } else {
+        valid.push(f);
+      }
     });
 
-    if (valid.length < files.length) {
+    if (invalidExt) {
       setErrorMsg('Only PDF and TXT file formats are supported.');
+    } else if (oversized) {
+      setErrorMsg('One or more files exceed the maximum allowed size limit of 10MB.');
     }
 
     setSelectedFiles((prev) => [...prev, ...valid]);

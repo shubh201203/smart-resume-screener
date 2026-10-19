@@ -18,6 +18,12 @@ export const CandidateDetailPage: React.FC<CandidateDetailPageProps> = ({ candid
   const [newNote, setNewNote] = useState('');
   const [submittingNote, setSubmittingNote] = useState(false);
   const [showRawResume, setShowRawResume] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const loadCandidate = async () => {
     try {
@@ -25,7 +31,7 @@ export const CandidateDetailPage: React.FC<CandidateDetailPageProps> = ({ candid
       const data = await api.getCandidate(candidateId);
       setCandidate(data);
     } catch (err: any) {
-      alert(`Failed to load candidate: ${err.message}`);
+      showToast('error', `Failed to load candidate: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -38,9 +44,10 @@ export const CandidateDetailPage: React.FC<CandidateDetailPageProps> = ({ candid
   const handleStatusChange = async (status: string) => {
     try {
       await api.updateCandidateStatus(candidateId, status);
+      showToast('success', `Candidate status updated to ${status}.`);
       await loadCandidate();
     } catch (err: any) {
-      alert(`Status update failed: ${err.message}`);
+      showToast('error', `Status update failed: ${err.message}`);
     }
   };
 
@@ -51,9 +58,10 @@ export const CandidateDetailPage: React.FC<CandidateDetailPageProps> = ({ candid
       setSubmittingNote(true);
       await api.addNote(candidateId, newNote);
       setNewNote('');
+      showToast('success', 'Recruiter note recorded.');
       await loadCandidate();
     } catch (err: any) {
-      alert(`Failed to add note: ${err.message}`);
+      showToast('error', `Failed to add note: ${err.message}`);
     } finally {
       setSubmittingNote(false);
     }
@@ -74,13 +82,28 @@ export const CandidateDetailPage: React.FC<CandidateDetailPageProps> = ({ candid
   return (
     <div className="space-y-6">
       {/* Back Link */}
-      <button
-        onClick={onBack}
-        className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        <span>Back to Candidates Table</span>
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Candidates Table</span>
+        </button>
+
+        {feedback && (
+          <div
+            role="status"
+            className={`px-3 py-1.5 rounded-lg border text-xs font-medium ${
+              feedback.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
+      </div>
 
       {/* Candidate Profile Header Card */}
       <div className="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">

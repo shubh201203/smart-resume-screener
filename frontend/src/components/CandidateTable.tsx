@@ -22,13 +22,16 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<'score' | 'exp' | 'name'>('score');
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [compareWarning, setCompareWarning] = useState<string | null>(null);
 
   const toggleSelectCompare = (id: string) => {
+    setCompareWarning(null);
     if (selectedForCompare.includes(id)) {
       setSelectedForCompare(selectedForCompare.filter((i) => i !== id));
     } else {
       if (selectedForCompare.length >= 3) {
-        alert('You can select a maximum of 3 candidates for side-by-side comparison.');
+        setCompareWarning('Maximum 3 candidates can be selected simultaneously for side-by-side comparison.');
+        setTimeout(() => setCompareWarning(null), 4000);
         return;
       }
       setSelectedForCompare([...selectedForCompare, id]);
@@ -130,6 +133,13 @@ export const CandidateTable: React.FC<CandidateTableProps> = ({
           )}
         </div>
       </div>
+
+      {compareWarning && (
+        <div role="alert" className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 font-medium flex items-center justify-between">
+          <span>{compareWarning}</span>
+          <button onClick={() => setCompareWarning(null)} className="text-slate-400 hover:text-white text-xs">Dismiss</button>
+        </div>
+      )}
 
       {/* Candidate Table */}
       <div className="overflow-x-auto">

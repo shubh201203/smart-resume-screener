@@ -10,6 +10,17 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./resume_screener.db")
+
+    # CORS Allowed Origins
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+    )
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        raw = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        return raw or ["http://localhost:5173", "http://127.0.0.1:5173"]
     
     # LLM Settings (Abstraction layer)
     LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")

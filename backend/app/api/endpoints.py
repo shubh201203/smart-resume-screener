@@ -7,7 +7,7 @@ from app.database.session import get_db
 from app.models.domain import Project, Job, Resume, Candidate, MatchScore, RecruiterNote
 from app.schemas.domain import (
     APIResponse, ErrorDetail, ProjectCreate, JobCreate, RecruiterNoteCreate,
-    CandidateStatusUpdate, ComparisonRequest
+    CandidateStatusUpdate, ComparisonRequest, ProjectWeightsUpdate
 )
 from app.services import (
     create_project, create_and_analyze_job, upload_and_process_resume,
@@ -83,6 +83,57 @@ def api_get_project(project_id: str, db: Session = Depends(get_db)):
         "created_at": project.created_at.isoformat(),
         "job": job_data,
         "candidates": cand_list
+    })
+
+@router.put("/projects/{project_id}/weights", response_model=APIResponse[Dict[str, Any]])
+async def api_update_project_weights(
+    project_id: str,
+    data: ProjectWeightsUpdate,
+    db: Session = Depends(get_db)
+):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    from app.matching.engine import normalize_and_validate_weights
+    normalized = normalize_and_validate_weights(data.scoring_weights)
+
+    # Persist updated weights
+    project.scoring_weights = normalized
+    db.commit()
+    db.refresh(project)
+
+    # If project has a job and candidates, re-screen to recalculate rankings with new weights
+    recalculated_count = 0
+    if project.job:
+        candidates = db.query(Candidate).filter(Candidate.project_id == project_id).all()
+        for cand in candidates:
+            if cand.match_score:
+                from app.matching import process_candidate_matching
+                raw_text = cand.resume.raw_text if cand.resume else ""
+                match_result = await process_candidate_matching(
+                    candidate_data=cand.extracted_data or {},
+                    job_data=project.job.parsed_data or {},
+                    raw_resume_text=raw_text,
+                    weights=normalized
+                )
+                cand.match_score.overall_score = match_result.overall_score
+                cand.match_score.component_scores = match_result.component_scores.model_dump()
+                cand.match_score.recommendation = match_result.recommendation
+                cand.match_score.confidence = match_result.confidence
+                cand.match_score.matched_skills = [m.model_dump() for m in match_result.matched_skills]
+                cand.match_score.partial_matches = match_result.partial_matches
+                cand.match_score.missing_skills = match_result.missing_skills
+                cand.match_score.why_not_10 = match_result.why_not_10
+                cand.match_score.ai_justification = match_result.ai_justification
+                recalculated_count += 1
+        db.commit()
+
+    return APIResponse(data={
+        "id": project.id,
+        "scoring_weights": project.scoring_weights,
+        "recalculated_candidates": recalculated_count,
+        "message": "Scoring weights updated and rankings recalculated successfully."
     })
 
 @router.post("/jobs", response_model=APIResponse[Dict[str, Any]])

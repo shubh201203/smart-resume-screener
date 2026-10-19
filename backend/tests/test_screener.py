@@ -234,3 +234,99 @@ async def test_candidate_comparison(db_session):
     assert comp_result["job_title"] is not None
     assert len(comp_result["candidates"]) == 2
     assert len(comp_result["comparison_summary"]) > 10
+
+# --- 10. SECURITY & REGRESSION TESTS ---
+def test_csv_formula_injection_sanitization():
+    from app.services.export_service import sanitize_csv_cell
+    # Formula prefixes = + - @ and leading whitespace/control chars
+    assert sanitize_csv_cell("=1+1").startswith("'=")
+    assert sanitize_csv_cell("+cmd|'/c calc'!A0").startswith("'+")
+    assert sanitize_csv_cell("-2+3").startswith("'-")
+    assert sanitize_csv_cell("@SUM(A1:A10)").startswith("'@")
+    assert sanitize_csv_cell("   =DDE(...)").startswith("'   =")
+    assert sanitize_csv_cell("\t=HYPERLINK(...)").startswith("'\t=")
+    # Safe text remains unchanged
+    assert sanitize_csv_cell("Alex Rivera") == "Alex Rivera"
+    assert sanitize_csv_cell("alex@example.com") == "alex@example.com"
+    assert sanitize_csv_cell("") == ""
+    assert sanitize_csv_cell(None) == ""
+
+def test_safe_filename_sanitization():
+    from app.parsers import sanitize_filename
+    assert sanitize_filename("../../etc/passwd.pdf") == "passwd.pdf"
+    assert sanitize_filename("..\\..\\windows\\system32\\calc.txt") == "calc.txt"
+    assert sanitize_filename("resume;rm -rf.pdf") == "resume_rm_-rf.pdf"
+    assert sanitize_filename("normal_resume.pdf") == "normal_resume.pdf"
+    assert sanitize_filename("   .hidden.pdf   ") == "hidden.pdf"
+    assert sanitize_filename("") == "resume.pdf"
+
+def test_non_normalized_weights_handling():
+    from app.matching.engine import normalize_and_validate_weights
+    # Non-1.0 sum
+    w = {"skills": 70.0, "experience": 30.0}
+    norm = normalize_and_validate_weights(w)
+    assert round(sum(norm.values()), 4) == 1.0000
+    assert norm["skills"] > norm["experience"]
+
+    # Negative & invalid values
+    w_bad = {"skills": -10.0, "experience": float('nan'), "projects": 5.0}
+    norm_bad = normalize_and_validate_weights(w_bad)
+    assert round(sum(norm_bad.values()), 4) == 1.0000
+    assert norm_bad["skills"] == 0.0
+
+    # Total zero fallback
+    w_zero = {"skills": 0.0, "experience": 0.0, "semantic_fit": 0.0, "projects": 0.0, "education": 0.0, "certifications": 0.0}
+    norm_zero = normalize_and_validate_weights(w_zero)
+    assert round(sum(norm_zero.values()), 4) == 1.0000
+
+def test_evidence_grounding_in_text():
+    from app.matching.fallback import check_skill_in_text
+    resume = "Developed scalable microservices using Python and FastAPI at Tech Corp."
+    is_match, is_partial, evidence = check_skill_in_text("Python", resume)
+    assert is_match is True
+    assert "Python" in evidence
+    assert "Tech Corp" in evidence
+
+    # Skill absent returns empty evidence
+    is_m2, is_p2, ev2 = check_skill_in_text("Kubernetes", resume)
+    assert is_m2 is False
+    assert is_p2 is False
+    assert ev2 == ""
+
+@pytest.mark.asyncio
+async def test_idempotent_demo_data_seeding(db_session):
+    # Call demo seeding twice
+    res1 = await seed_demo_data(db_session)
+    res2 = await seed_demo_data(db_session)
+    assert res1["candidates_created"] == 5
+    assert res2["candidates_created"] == 5
+    # Total demo projects with this title in DB should still be exactly 1
+    from app.services.demo_service import DEMO_PROJECT_TITLE
+    demo_projects = db_session.query(Project).filter(Project.title == DEMO_PROJECT_TITLE).all()
+    assert len(demo_projects) == 1
+
+@pytest.mark.asyncio
+async def test_update_project_weights_api(db_session):
+    demo = await seed_demo_data(db_session)
+    proj_id = demo["project_id"]
+
+    from app.api.endpoints import api_update_project_weights
+    from app.schemas.domain import ProjectWeightsUpdate
+
+    new_weights = {
+        "skills": 50,
+        "experience": 30,
+        "semantic_fit": 10,
+        "projects": 5,
+        "education": 3,
+        "certifications": 2
+    }
+    resp = await api_update_project_weights(
+        project_id=proj_id,
+        data=ProjectWeightsUpdate(scoring_weights=new_weights),
+        db=db_session
+    )
+    assert resp.success is True
+    assert resp.data["recalculated_candidates"] == 5
+    assert round(sum(resp.data["scoring_weights"].values()), 2) == 1.00
+

@@ -1,7 +1,25 @@
 import csv
 import io
+from typing import Any
 from sqlalchemy.orm import Session
 from app.models.domain import Candidate, MatchScore, Project
+
+FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+def sanitize_csv_cell(value: Any) -> str:
+    """
+    Sanitizes string value to prevent CSV formula injection / DDE attacks.
+    If the value starts with =, +, -, @ or whitespace/control character followed by formula triggers,
+    it is prepended with a single quote (') so spreadsheets treat it strictly as text.
+    """
+    if value is None:
+        return ""
+    text = str(value)
+    # Strip non-printable or leading whitespace to detect hidden formula prefixes
+    stripped = text.lstrip()
+    if stripped.startswith(FORMULA_PREFIXES):
+        return f"'{text}"
+    return text
 
 def export_screening_csv(db: Session, project_id: str) -> str:
     project = db.query(Project).filter(Project.id == project_id).first()
@@ -45,19 +63,20 @@ def export_screening_csv(db: Session, project_id: str) -> str:
         summary_str = m.ai_justification if m else ""
         quality_str = cand.resume.quality_label if cand.resume else "N/A"
 
-        writer.writerow([
+        row = [
             rank,
-            cand.name,
-            cand.email or "N/A",
+            sanitize_csv_cell(cand.name),
+            sanitize_csv_cell(cand.email or "N/A"),
             f"{score_val:.1f}",
-            m.recommendation if m else "Pending",
-            m.confidence if m else "N/A",
-            quality_str,
+            sanitize_csv_cell(m.recommendation if m else "Pending"),
+            sanitize_csv_cell(m.confidence if m else "N/A"),
+            sanitize_csv_cell(quality_str),
             f"{cand.total_years_experience:.1f}",
-            matched_str,
-            missing_str,
-            why_not_str,
-            summary_str
-        ])
+            sanitize_csv_cell(matched_str),
+            sanitize_csv_cell(missing_str),
+            sanitize_csv_cell(why_not_str),
+            sanitize_csv_cell(summary_str)
+        ]
+        writer.writerow(row)
 
     return output.getvalue()

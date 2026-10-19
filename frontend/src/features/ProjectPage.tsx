@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Download, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Sparkles } from 'lucide-react';
+import { Play, Download, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Sparkles, Sliders, X, Check } from 'lucide-react';
 import type { ProjectDetail } from '../types';
 import { api } from '../services/api';
 import { Dropzone } from '../components/Dropzone';
@@ -21,14 +21,40 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [jobDescriptionInput, setJobDescriptionInput] = useState('');
   const [creatingJob, setCreatingJob] = useState(false);
+  const [showWeightsModal, setShowWeightsModal] = useState(false);
+  const [weightsInput, setWeightsInput] = useState<Record<string, number>>({
+    skills: 35,
+    experience: 20,
+    semantic_fit: 20,
+    projects: 15,
+    education: 5,
+    certifications: 5,
+  });
+  const [savingWeights, setSavingWeights] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const loadProject = async () => {
     try {
       setLoading(true);
       const data = await api.getProject(projectId);
       setProject(data);
+      if (data.scoring_weights) {
+        setWeightsInput({
+          skills: Math.round((data.scoring_weights.skills || 0.35) * 100),
+          experience: Math.round((data.scoring_weights.experience || 0.20) * 100),
+          semantic_fit: Math.round((data.scoring_weights.semantic_fit || 0.20) * 100),
+          projects: Math.round((data.scoring_weights.projects || 0.15) * 100),
+          education: Math.round((data.scoring_weights.education || 0.05) * 100),
+          certifications: Math.round((data.scoring_weights.certifications || 0.05) * 100),
+        });
+      }
     } catch (err: any) {
-      alert(`Failed to load project: ${err.message}`);
+      showToast('error', `Failed to load project: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -42,9 +68,10 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
     try {
       setRunningScreening(true);
       await api.runScreening(projectId);
+      showToast('success', 'Candidate screening and ranking completed.');
       await loadProject();
     } catch (err: any) {
-      alert(`Screening failed: ${err.message}`);
+      showToast('error', `Screening failed: ${err.message}`);
     } finally {
       setRunningScreening(false);
     }
@@ -56,9 +83,10 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
       setCreatingJob(true);
       await api.createJob(projectId, project?.title || 'Target Job', jobDescriptionInput);
       setJobDescriptionInput('');
+      showToast('success', 'Job description parsed and saved.');
       await loadProject();
     } catch (err: any) {
-      alert(`Job creation failed: ${err.message}`);
+      showToast('error', `Job creation failed: ${err.message}`);
     } finally {
       setCreatingJob(false);
     }
@@ -67,9 +95,29 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
   const handleStatusChange = async (candidateId: string, newStatus: string) => {
     try {
       await api.updateCandidateStatus(candidateId, newStatus);
+      showToast('success', `Candidate status updated to ${newStatus}.`);
       await loadProject();
     } catch (err: any) {
-      alert(`Failed to update status: ${err.message}`);
+      showToast('error', `Failed to update status: ${err.message}`);
+    }
+  };
+
+  const handleSaveWeights = async () => {
+    const total = Object.values(weightsInput).reduce((a, b) => a + b, 0);
+    if (total !== 100) {
+      showToast('error', `Weights must sum to 100%. Current total: ${total}%`);
+      return;
+    }
+    try {
+      setSavingWeights(true);
+      const res = await api.updateProjectWeights(projectId, weightsInput);
+      setShowWeightsModal(false);
+      showToast('success', res.message || 'Scoring weights updated and rankings recalculated.');
+      await loadProject();
+    } catch (err: any) {
+      showToast('error', `Failed to save weights: ${err.message}`);
+    } finally {
+      setSavingWeights(false);
     }
   };
 
@@ -105,6 +153,15 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
         {/* Action Toolbar */}
         <div className="flex items-center space-x-3">
           <button
+            onClick={() => setShowWeightsModal(true)}
+            className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-all cursor-pointer border border-slate-700"
+            title="Configure role-specific deterministic scoring weights"
+          >
+            <Sliders className="w-4 h-4 text-purple-400" />
+            <span>Scoring Weights</span>
+          </button>
+
+          <button
             onClick={() => setShowDropzone(!showDropzone)}
             className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-all cursor-pointer"
           >
@@ -135,6 +192,35 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
           </a>
         </div>
       </div>
+
+      {/* Accessible Toast Notification */}
+      {feedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between transition-all ${
+            feedback.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          }`}
+        >
+          <div className="flex items-center space-x-2">
+            {feedback.type === 'success' ? (
+              <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="p-1 text-slate-400 hover:text-white cursor-pointer"
+            aria-label="Dismiss notification"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Fairness & Bias Disclaimer */}
       <FairnessNotice />
@@ -243,6 +329,104 @@ export const ProjectPage: React.FC<ProjectPageProps> = ({ projectId, onBack, onS
           candidateIds={compareIds}
           onClose={() => setCompareIds([])}
         />
+      )}
+
+      {/* Role-Specific Scoring Weights Modal */}
+      {showWeightsModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="weights-modal-title"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 id="weights-modal-title" className="text-base font-bold text-white">Project Scoring Weights</h3>
+                  <p className="text-xs text-slate-400">Custom weights persist to DB and automatically recalculate rankings</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWeightsModal(false)}
+                aria-label="Close weights modal"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Weights Sliders */}
+            <div className="space-y-3.5 text-xs">
+              {[
+                { key: 'skills', label: 'Skills Match Coverage', color: 'text-emerald-400', max: 60 },
+                { key: 'experience', label: 'Professional Experience', color: 'text-indigo-400', max: 50 },
+                { key: 'semantic_fit', label: 'Semantic Job Fit', color: 'text-purple-400', max: 40 },
+                { key: 'projects', label: 'Project Relevance', color: 'text-amber-400', max: 30 },
+                { key: 'education', label: 'Education Alignment', color: 'text-cyan-400', max: 20 },
+                { key: 'certifications', label: 'Certifications Fit', color: 'text-pink-400', max: 20 },
+              ].map(({ key, label, color, max }) => (
+                <div key={key}>
+                  <div className="flex justify-between font-semibold text-slate-300 mb-1">
+                    <span>{label}</span>
+                    <span className={`font-bold ${color}`}>{weightsInput[key] || 0}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={max}
+                    value={weightsInput[key] || 0}
+                    onChange={(e) =>
+                      setWeightsInput({ ...weightsInput, [key]: Number(e.target.value) })
+                    }
+                    className="w-full cursor-pointer accent-indigo-500"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Sum Indicator */}
+            {(() => {
+              const total = Object.values(weightsInput).reduce((a, b) => a + b, 0);
+              return (
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                  <span className="text-slate-400">Total Sum:</span>
+                  <span
+                    className={`font-bold px-2.5 py-0.5 rounded-full border ${
+                      total === 100
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                    }`}
+                  >
+                    {total}% {total === 100 ? '✓ Ready' : `(needs ${100 - total}% adjustment)`}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowWeightsModal(false)}
+                className="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveWeights}
+                disabled={savingWeights}
+                className="w-1/2 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl cursor-pointer shadow-lg shadow-indigo-600/20"
+              >
+                {savingWeights ? 'Recalculating...' : 'Save & Re-Score'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -36,6 +36,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ title, department }),
     }),
+  updateProjectWeights: (projectId: string, weights: Record<string, number>) =>
+    fetchJSON<{ id: string; scoring_weights: Record<string, number>; recalculated_candidates: number; message: string }>(
+      `/projects/${projectId}/weights`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ scoring_weights: weights }),
+      }
+    ),
 
   // Jobs
   createJob: (projectId: string, title: string, rawDescription: string) =>

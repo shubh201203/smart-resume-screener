@@ -128,3 +128,6 @@ class CandidateStatusUpdate(BaseModel):
 
 class ComparisonRequest(BaseModel):
     candidate_ids: List[str] = Field(..., max_length=3)
+
+class ProjectWeightsUpdate(BaseModel):
+    scoring_weights: Dict[str, float]

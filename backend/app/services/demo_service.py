@@ -180,11 +180,19 @@ B.A. in Graphic Design & Web Media | Columbia College (2023)
     }
 ]
 
+DEMO_PROJECT_TITLE = "Software Engineer — Backend (Cloud Services)"
+
 async def seed_demo_data(db: Session) -> Dict[str, Any]:
-    """Generates complete presentation demo project with 5 dynamic candidates."""
-    # 1. Create Demo Project
+    """Generates complete presentation demo project with 5 dynamic candidates idempotently."""
+    # 1. Clean up any existing demo project to avoid accumulating duplicate demo entries
+    existing_demos = db.query(Project).filter(Project.title == DEMO_PROJECT_TITLE).all()
+    for p in existing_demos:
+        db.delete(p)
+    db.commit()
+
+    # 2. Create Demo Project
     project = Project(
-        title="Software Engineer — Backend (Cloud Services)",
+        title=DEMO_PROJECT_TITLE,
         department="Engineering"
     )
     db.add(project)

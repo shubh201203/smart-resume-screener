@@ -10,6 +10,41 @@ from app.matching.fallback import (
     rule_based_job_extraction
 )
 
+DEFAULT_WEIGHTS = {
+    "skills": 0.35,
+    "experience": 0.20,
+    "semantic_fit": 0.20,
+    "projects": 0.15,
+    "education": 0.05,
+    "certifications": 0.05,
+}
+
+def normalize_and_validate_weights(weights: Optional[Dict[str, Any]]) -> Dict[str, float]:
+    """
+    Validates and normalizes weights so their sum is strictly 1.0.
+    Handles missing keys, non-numeric values, negative values, and non-finite floats.
+    Falls back safely to DEFAULT_WEIGHTS.
+    """
+    if not isinstance(weights, dict):
+        return dict(DEFAULT_WEIGHTS)
+
+    cleaned: Dict[str, float] = {}
+    for key, default_val in DEFAULT_WEIGHTS.items():
+        raw_val = weights.get(key)
+        try:
+            val = float(raw_val)
+            if math.isnan(val) or math.isinf(val) or val < 0.0:
+                val = 0.0
+        except (TypeError, ValueError):
+            val = default_val
+        cleaned[key] = val
+
+    total = sum(cleaned.values())
+    if total <= 1e-6:
+        return dict(DEFAULT_WEIGHTS)
+
+    return {k: v / total for k, v in cleaned.items()}
+
 def calculate_deterministic_scores(
     candidate_data: Dict[str, Any],
     job_data: Dict[str, Any],
@@ -21,17 +56,22 @@ def calculate_deterministic_scores(
     Computes component scores (1-10) and deterministic weighted final score.
     Returns (ComponentScores, matched_skills, partial_matches, missing_skills).
     """
-    w_skills = weights.get("skills", 0.35)
-    w_exp = weights.get("experience", 0.20)
-    w_semantic = weights.get("semantic_fit", 0.20)
-    w_projects = weights.get("projects", 0.15)
-    w_edu = weights.get("education", 0.05)
-    w_cert = weights.get("certifications", 0.05)
+    normalized_weights = normalize_and_validate_weights(weights)
+    w_skills = normalized_weights["skills"]
+    w_exp = normalized_weights["experience"]
+    w_semantic = normalized_weights["semantic_fit"]
+    w_projects = normalized_weights["projects"]
+    w_edu = normalized_weights["education"]
+    w_cert = normalized_weights["certifications"]
 
     # Combine all candidate text for evidence scanning
-    candidate_text_corpus = raw_resume_text + " " + " ".join(candidate_data.get("skills", []))
-    for exp in candidate_data.get("experience", []):
-        candidate_text_corpus += " " + " ".join(exp.get("responsibilities", [])) + " " + " ".join(exp.get("technologies", []))
+    skills_list = candidate_data.get("skills", []) if isinstance(candidate_data, dict) else []
+    candidate_text_corpus = (raw_resume_text or "") + " " + " ".join(skills_list)
+    for exp in (candidate_data.get("experience", []) if isinstance(candidate_data, dict) else []):
+        if isinstance(exp, dict):
+            resps = exp.get("responsibilities", [])
+            techs = exp.get("technologies", [])
+            candidate_text_corpus += " " + " ".join(resps if isinstance(resps, list) else []) + " " + " ".join(techs if isinstance(techs, list) else [])
 
     required_skills = job_data.get("required_skills", [])
     preferred_skills = job_data.get("preferred_skills", [])

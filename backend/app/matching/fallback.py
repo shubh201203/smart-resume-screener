@@ -24,29 +24,33 @@ def check_skill_in_text(skill: str, text: str) -> Tuple[bool, bool, str]:
     """
     Checks if a skill or its synonym is present in candidate text.
     Returns (is_matched: bool, is_partial: bool, evidence_snippet: str).
+    Guarantees evidence is grounded in candidate text where matches occur.
     """
     clean_skill = skill.lower().strip()
+    if not clean_skill or not text or not text.strip():
+        return False, False, ""
+
     lower_text = text.lower()
     
-    # Exact or substring match
+    # Exact or substring match in candidate text
     if clean_skill in lower_text:
-        # Find sentence context for evidence
-        sentences = re.split(r'[.\n]', text)
-        for s in sentences:
-            if clean_skill in s.lower():
-                return True, False, s.strip()
-        return True, False, f"Demonstrated knowledge in {skill}."
+        # Split text into lines or sentences for high-quality context
+        chunks = [c.strip() for c in re.split(r'[\r\n.]+', text) if c.strip()]
+        for c in chunks:
+            if clean_skill in c.lower():
+                return True, False, c
+        return True, False, f"Direct mention of {skill} found in candidate profile."
         
     # Synonym search
     for main_tech, syns in COMMON_TECH_SYNONYMS.items():
         if clean_skill == main_tech or clean_skill in syns:
             for syn in syns + [main_tech]:
                 if syn in lower_text:
-                    sentences = re.split(r'[.\n]', text)
-                    for s in sentences:
-                        if syn in s.lower():
-                            return False, True, s.strip()
-                    return False, True, f"Demonstrated related experience in {syn}."
+                    chunks = [c.strip() for c in re.split(r'[\r\n.]+', text) if c.strip()]
+                    for c in chunks:
+                        if syn in c.lower():
+                            return False, True, c
+                    return False, True, f"Related technology {syn} identified in candidate background."
                     
     return False, False, ""
 
