@@ -7,7 +7,10 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     SCORING_VERSION: str = "1.0"
     API_V1_STR: str = "/api"
-    
+    # Server Binding (Render dynamic PORT support)
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", "8000"))
+
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./resume_screener.db")
 

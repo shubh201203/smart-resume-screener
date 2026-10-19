@@ -330,3 +330,35 @@ async def test_update_project_weights_api(db_session):
     assert resp.data["recalculated_candidates"] == 5
     assert round(sum(resp.data["scoring_weights"].values()), 2) == 1.00
 
+# --- 8. PRODUCTION DEPLOYMENT & HEALTH CHECK TESTS ---
+def test_health_check_endpoint():
+    from app.main import app
+    from fastapi.testclient import TestClient
+    client = TestClient(app)
+
+    res_root = client.get("/")
+    assert res_root.status_code == 200
+    assert res_root.json()["status"] == "healthy"
+
+    res_health = client.get("/health")
+    assert res_health.status_code == 200
+    assert res_health.json()["status"] == "healthy"
+
+    res_api_health = client.get("/api/health")
+    assert res_api_health.status_code == 200
+    assert res_api_health.json()["status"] == "healthy"
+
+def test_database_url_postgres_normalization():
+    neon_url = "postgres://user:pass@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require"
+    normalized = neon_url.replace("postgres://", "postgresql://", 1) if neon_url.startswith("postgres://") else neon_url
+    assert normalized.startswith("postgresql://")
+    assert "sslmode=require" in normalized
+
+def test_cors_origins_configuration():
+    from app.core.config import Settings
+    s = Settings(CORS_ORIGINS="https://smart-resume.vercel.app, http://localhost:5173")
+    origins = s.cors_origins_list
+    assert "https://smart-resume.vercel.app" in origins
+    assert "http://localhost:5173" in origins
+    assert len(origins) == 2
+

@@ -3,7 +3,9 @@ import type {
   AnalyticsData, ComparisonResult
 } from '../types';
 
-const API_BASE = '/api';
+// Dynamically resolve API Base URL for local development or Vercel production deployment
+const envBase = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
+const API_BASE = envBase ? (envBase.endsWith('/api') ? envBase : `${envBase}/api`) : '/api';
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {

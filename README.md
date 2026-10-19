@@ -98,7 +98,7 @@ npm run dev
 ```
 Frontend will open on `http://localhost:5173`.
 
-### 4. Run Automated Test Suite (26 Pytest Tests)
+### 4. Run Automated Test Suite (29 Pytest Tests)
 ```bash
 cd smart-resume-screener/backend
 python -m pytest
@@ -106,7 +106,18 @@ python -m pytest
 
 ---
 
-## 🌐 7. API Reference
+## ☁️ 7. Production Deployment (Vercel + Render + Neon)
+
+SmartResume AI is architected for zero-cost, serverless production deployment:
+- **Frontend (Vercel)**: React 19 + Vite SPA with automatic client-side routing via `frontend/vercel.json`.
+- **Backend (Render)**: FastAPI web service with dynamic `$PORT` binding, `/health` endpoint, and CORS management.
+- **Database (Neon PostgreSQL)**: Serverless PostgreSQL with automatic table creation and connection pooling.
+
+For complete step-by-step setup, see [DEPLOYMENT.md](file:///C:/Users/shubh/Downloads/smart-resume-screener/DEPLOYMENT.md).
+
+---
+
+## 🌐 8. API Reference
 
 | Endpoint | Method | Description |
 | :--- | :---: | :--- |
@@ -126,7 +137,7 @@ python -m pytest
 
 ---
 
-## 🎬 8. Evaluator Demo Flow
+## 🎬 9. Evaluator Demo Flow
 
 1. Open `http://localhost:5173` to view the **SmartResume AI Landing Page**.
 2. Click **"TRY DEMO"** to automatically seed a "Senior Backend Software Engineer" project with 5 candidates.
@@ -144,7 +155,7 @@ python -m pytest
 
 ---
 
-## 🛡️ 9. Ethics, Responsible AI & Limitations
+## 🛡️ 10. Ethics, Responsible AI & Limitations
 
 - **Decision-Support Tool**: SmartResume AI generates decision-support signals to assist human recruiters and **should not replace human judgment**. The tool does not claim to eliminate human bias or make hiring decisions autonomously.
 - **Fairness by Design**: Scoring explicitly excludes protected personal attributes including gender, race, age, religion, photos, marital status, and political affiliations.
