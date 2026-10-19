@@ -1,20 +1,38 @@
-# SmartResume AI — Smart Resume Screener & Recruitment Intelligence Platform
+# SmartResume AI — AI-Powered Resume Screener & Recruitment Intelligence Platform
 
-A production-quality **AI-powered Resume Screener & Recruitment Intelligence Platform** built with FastAPI, SQLite/PostgreSQL, React 19, Vite, TypeScript, and Tailwind CSS.
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![SQLAlchemy](https://img.shields.io/badge/ORM-SQLAlchemy_2.0-D71F00?style=flat)](https://www.sqlalchemy.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_|_SQLite-4169E1?style=flat&logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Pytest](https://img.shields.io/badge/Tests-29%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> A full-stack, data-driven recruitment intelligence platform combining hybrid AI parsing, deterministic math-based candidate scoring, direct textual evidence extraction, and recruiter analytics.
+
+**Repository:** [https://github.com/shubh201203/smart-resume-screener](https://github.com/shubh201203/smart-resume-screener)  
+**Developer:** [Shubh Sharma](https://github.com/shubh201203) | [Portfolio](https://shubh201203.github.io/portfolio/) | [LinkedIn](https://www.linkedin.com/in/shubh-sharma-2067981b5)  
+**Target Roles:** Data Analyst Intern · Python Developer Intern · AI/ML Intern
 
 ---
 
-## 🎯 1. Problem & Solution
+## 🎯 1. Overview & Problem Statement
 
 ### The Problem
-Traditional ATS platforms rely on rigid keyword matching, rejecting qualified candidates who express skills using alternative terminology (e.g., rejecting an applicant who built "RESTful APIs in Express and MongoDB" for a role specifying "Node.js backend experience"). At the same time, opaque black-box AI scores lack explainability, leaving recruiters without evidence-backed justification for hiring recommendations.
+Traditional Applicant Tracking Systems (ATS) and early AI screening tools suffer from two major failure modes:
+1. **Keyword Rigidity:** Conventional keyword filters reject qualified applicants who describe skills with synonymy or contextual phrasing (e.g., rejecting an applicant experienced in "building high-throughput REST APIs with Express & MongoDB" for a job requiring "Node.js backend engineering").
+2. **Black-Box AI Hallucinations:** Generative AI solutions often produce opaque 1–10 scores without transparent justification or grounded evidence, inventing qualifications or penalizing candidates without recruiter auditability.
 
 ### The Solution: SmartResume AI
-SmartResume AI solves this through a **Hybrid AI Architecture**:
-- **Semantic Understanding**: Uses LLMs to recognize technological equivalence and contextual experience depth without keyword gaming.
-- **Evidence-Based Grounding**: Quotes exact text snippets extracted directly from candidate resume text for every matched skill or gap—no hallucinated claims.
-- **Deterministic Math Scoring**: The LLM does **not** pick the final score. A transparent, configurable weighted formula calculates the match score ($1.0\text{--}10.0$).
-- **Explainable Recommendations**: Generates **"WHY NOT 10/10?"** diagnostic points detailing exact reasons for score reductions.
+SmartResume AI implements an **auditable, evidence-grounded screening pipeline**:
+- **Semantic Understanding:** Recognizes technology equivalence and contextual experience depth without keyword gaming.
+- **Direct Evidence Quotation:** Matches skills against verbatim resume text snippets—every matched skill or gap cites textual evidence from the uploaded document.
+- **Deterministic Math Scoring:** The LLM does **not** pick the final score. A transparent, strictly normalized weighted formula calculates match scores on a continuous scale ($1.0\text{--}10.0$).
+- **"WHY NOT 10/10?" Diagnostic Feedback:** Explicitly identifies what candidate credentials were missing or partially met to explain score reductions.
+- **Recruiter Workflow Suite:** Provides side-by-side multi-candidate comparison, interactive project scoring weight adjustments, visual skill coverage analytics, and sanitized CSV exports.
 
 ---
 
@@ -22,142 +40,299 @@ SmartResume AI solves this through a **Hybrid AI Architecture**:
 
 ```mermaid
 flowchart TD
-    A["Resume (PDF / TXT)"] --> B["SHA-256 Hash Check & Deduplication"]
-    B --> C["Filename Sanitization & Size Limit (10MB)"]
-    C --> D["Text Extraction & Resume Quality Index"]
-    D --> E["Structured Extraction (Candidate & Job JSON)"]
-    E --> F{"LLM Configured?"}
-    F -- Yes --> G["LLM Semantic Analysis & Evidence Extraction"]
-    F -- No / Failure --> H["Rule-Based TF-IDF Cosine Similarity Engine"]
-    G --> I["Deterministic Weighted Math Engine (1.0 - 10.0)"]
-    H --> I
-    I --> J["Explainability & 'Why Not 10/10?' Generation"]
-    J --> K["Recruiter SaaS Dashboard (Table, Compare, Analytics, CSV)"]
+    A["Resume Upload (PDF / TXT)"] --> B["SHA-256 Deduplication & Size Check (10MB)"]
+    B --> C["In-Memory Text Extraction & Resume Quality Index"]
+    C --> D["Structured Entity Extraction (JSON)"]
+    D --> E{"LLM Configured?"}
+    E -- Yes --> F["LLM Semantic Extraction & Evidence Grounding"]
+    E -- No / Fallback --> G["Rule-Based Extraction & TF-IDF Cosine Similarity"]
+    F --> H["Deterministic Weighted Math Engine (1.0 - 10.0)"]
+    G --> H
+    H --> I["Diagnostic 'Why Not 10/10?' & Recommendation"]
+    I --> J["Recruiter SaaS Dashboard (Ranking, Compare, Analytics, CSV Export)"]
 ```
+
+### Architectural Highlights
+- **Decoupled Client-Server Layout:** React 19 Single-Page Application communicating via RESTful JSON endpoints with a high-performance Python FastAPI backend.
+- **In-Memory File Processing:** Uploaded resume files are parsed in-memory, computing SHA-256 hashes for deduplication and saving raw text directly to relational storage. No files depend on local ephemeral disk.
+- **Dual Database Compatibility:** Native zero-configuration SQLite for rapid local development, alongside automated normalization for Neon Serverless PostgreSQL (`postgresql+psycopg2://`) with connection pooling (`pool_pre_ping=True`, `pool_recycle=300`) in production.
+- **Fail-Open Fallback Engine:** Operates autonomously with zero external API dependencies using Scikit-Learn TF-IDF cosine similarity and regex-based extraction if an LLM API key is not configured or rate-limited.
 
 ---
 
 ## 🧮 3. Deterministic Scoring Methodology
 
-The final candidate match score ($1.0\text{--}10.0$) is calculated mathematically using configurable component weights that are strictly normalized ($\sum w_i = 1.0$):
+Scores are computed mathematically via normalized component weights ($\sum w_i = 1.0$), mapping to an absolute range of $1.0\text{--}10.0$:
 
 $$\text{Final Score} = w_{\text{skills}} S_{\text{skills}} + w_{\text{exp}} S_{\text{exp}} + w_{\text{semantic}} S_{\text{semantic}} + w_{\text{projects}} S_{\text{projects}} + w_{\text{edu}} S_{\text{edu}} + w_{\text{cert}} S_{\text{cert}}$$
 
-### Default Configurable Weights:
-1. **Skills Match Coverage ($S_{\text{skills}}$ — 35%)**:
-   $$\text{Skills Score} = \frac{\text{Matched Required} \times 1.0 + \text{Matched Preferred} \times 0.5}{\text{Total Required} \times 1.0 + \text{Total Preferred} \times 0.5} \times 10.0$$
-2. **Experience Alignment ($S_{\text{exp}}$ — 20%)**:
-   - $\text{Candidate Exp} \ge \text{Required Exp}$: $9.0 + 0.5 \times (\text{Ratio} - 1.0)$ up to $10.0$.
-   - $\text{Candidate Exp} < \text{Required Exp}$: $\max(2.0, \frac{\text{Candidate Exp}}{\text{Required Exp}} \times 9.0)$.
-3. **Semantic Job Fit ($S_{\text{semantic}}$ — 20%)**: Contextual alignment evaluated via LLM assessment or TF-IDF cosine similarity in Fallback mode.
-4. **Project Relevance ($S_{\text{projects}}$ — 15%)**: Overlap between candidate project descriptions and target technology stack.
-5. **Education Fit ($S_{\text{edu}}$ — 5%)**: Alignment with target degree requirements.
-6. **Certifications Fit ($S_{\text{cert}}$ — 5%)**: Alignment with target certification requirements.
+### Default Component Breakdown
 
-> **Dynamic Weight Normalization**: Any custom weight values submitted by recruiters are automatically normalized ($w_i' = \frac{w_i}{\sum w_k}$ and $1.0 \le \text{Final Score} \le 10.0$), ensuring mathematical stability.
+| Component | Default Weight | Scoring Method |
+| :--- | :---: | :--- |
+| **Skills Match Coverage ($S_{\text{skills}}$)** | **35%** | $$\frac{\text{Matched Required} \times 1.0 + \text{Matched Preferred} \times 0.5}{\text{Total Required} \times 1.0 + \text{Total Preferred} \times 0.5} \times 10.0$$ |
+| **Experience Alignment ($S_{\text{exp}}$)** | **20%** | Ratio of candidate years of experience to job requirement with non-linear scaling ($2.0\text{--}10.0$). |
+| **Semantic Fit ($S_{\text{semantic}}$)** | **20%** | Contextual alignment via LLM evaluation or Scikit-Learn TF-IDF cosine similarity. |
+| **Project Relevance ($S_{\text{projects}}$)** | **15%** | Overlap between candidate project portfolio and target tech stack. |
+| **Education Fit ($S_{\text{edu}}$)** | **5%** | Alignment with target degree (B.S., M.S., Ph.D.) or practical equivalence. |
+| **Certifications Fit ($S_{\text{cert}}$)** | **5%** | Verification of relevant professional certifications. |
 
----
-
-## 🔒 4. Security, Privacy & Reliability Hardening
-
-- **CSV Formula Injection Mitigation**: All candidate exports sanitize cells starting with formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) by prepending a single quote (`'`), preventing DDE formula execution in spreadsheet software.
-- **Filename Sanitization**: Uploaded filenames are stripped of directory traversal sequences (`../`, `..\\`), control characters, and dangerous symbols before storage.
-- **File Upload Guardrails**: Enforces a strict 10MB size limit and validates file extensions (`.pdf`, `.txt`). Corrupted, empty, or scanned image-only PDFs are safely caught with clean user-facing error notices.
-- **CORS Configuration**: Configurable via `CORS_ORIGINS` environment variable with secure local development defaults, preventing insecure wildcard credential exposure.
-- **Idempotent Demo Seeding**: Repeated calls to `/api/demo/load` safely recreate the presentation project without accumulating redundant demo records in the database.
-- **Persistent Role-Specific Weights**: `PUT /api/projects/{project_id}/weights` persists custom weights to the database and automatically recalculates scores and rankings for existing candidates.
+> **Dynamic Normalization:** Recruiters can adjust weights directly via the dashboard (`PUT /api/projects/{id}/weights`). The backend automatically normalizes submitted weights ($w_i' = \frac{w_i}{\sum w_k}$) and triggers live candidate score recalculation across the project.
 
 ---
 
-## 🛠️ 5. Tech Stack
+## ⚡ 4. Key Features
 
-- **Frontend**: React 19, Vite, TypeScript, Tailwind CSS, Lucide Icons, Recharts.
-- **Backend**: Python 3.11, FastAPI, Pydantic v2, SQLAlchemy ORM, PyPDF, Scikit-Learn (TF-IDF), Pytest.
-- **Database**: SQLite (Zero-config development) / PostgreSQL compatible (`DATABASE_URL`).
-- **AI Integration**: OpenAI / OpenRouter HTTP Chat Completions abstraction layer.
+- **Document Parsing & Quality Guardrails:** Ingests `.pdf` and `.txt` files with strict 10MB limits, directory traversal sanitization, and SHA-256 hash deduplication. Automatically computes a Resume Quality Index (evaluating contact completeness, formatting structure, and text density).
+- **Explainable Match Inspector:** Detailed candidate profile view displaying radial score wheels, categorized skill matches (`REQUIRED` vs `PREFERRED`), verbatim extracted text quotes, and explicit missing skill gaps.
+- **"WHY NOT 10/10?" Diagnostics:** Human-readable explanations outlining exact reasons for score deductions (e.g., missing specific preferred technologies, experience duration below senior threshold).
+- **Candidate Comparison:** Select up to 3 candidates simultaneously for side-by-side trade-off analysis comparing scores, experience, matched skills, and recommendations.
+- **Recruiter Workflow & Notes:** Update candidate lifecycle statuses (`SHORTLISTED`, `CONSIDER`, `REJECTED`, `UNDER_REVIEW`) and persist timestamped recruiter interview notes.
+- **Skill Coverage Analytics:** Visual bar charts aggregating required and preferred skill penetration across the candidate pool to identify common cohort gaps.
+- **Sanitized CSV Export:** Exports candidate screening reports with RFC-4180 compliance and **CSV Formula Injection protection** (prepends `'` to cells starting with `=`, `+`, `-`, `@`, `\t`, `\r`).
+- **Idempotent Demo Mode:** One-click demo seeder that creates a standardized "Senior Backend Software Engineer" benchmark project with 5 dynamically scored candidates.
 
 ---
 
-## 🚀 6. Installation & Quick Start
+## 🛠️ 5. Technology Stack
 
-### 1. Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
+### Frontend
+- **Framework:** React 19 with Vite 8
+- **Language:** TypeScript 5.x
+- **Styling:** Tailwind CSS 4 with `@tailwindcss/vite`
+- **Visualization:** Recharts (Radial bars, bar charts, distribution trends)
+- **Icons:** Lucide React
 
-### 2. Start Backend Server
+### Backend
+- **Runtime:** Python 3.11
+- **API Framework:** FastAPI (Asynchronous ASGI endpoints)
+- **Validation & Serialization:** Pydantic v2
+- **ORM & Database Layer:** SQLAlchemy 2.0 with connection pooling
+- **Database Engine:** SQLite (Local) / PostgreSQL via `psycopg2-binary` (Production)
+- **Document Extraction:** PyPDF + UTF-8 Text Handlers
+- **NLP / ML Fallback:** Scikit-Learn (TF-IDF Vectorizer & Cosine Similarity) + NumPy
+- **Testing:** Pytest & Pytest-Asyncio (29 automated unit and integration tests)
+
+---
+
+## 🔄 6. Application Workflow
+
+```text
+1. Create Project ──────> Define hiring role and department
+         │
+         ▼
+2. Analyze Job ─────────> Paste Job Description (extracts Required vs Preferred skills)
+         │
+         ▼
+3. Ingest Resumes ──────> Batch upload PDF/TXT (deduplicated via SHA-256)
+         │
+         ▼
+4. Screen & Score ──────> Hybrid LLM / TF-IDF extraction + deterministic math scoring
+         │
+         ▼
+5. Inspect & Compare ───> Review evidence quotes, "Why Not 10/10?", and side-by-side comparison
+         │
+         ▼
+6. Recruiter Actions ───> Shortlist/Reject candidates, write interview notes, export CSV
+```
+
+---
+
+## 💻 7. Local Installation & Setup
+
+### Prerequisites
+- **Python:** 3.10 or 3.11 installed (`python --version`)
+- **Node.js:** 18+ and npm installed (`node -v`, `npm -v`)
+- **Git:** Installed and configured
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/shubh201203/smart-resume-screener.git
+cd smart-resume-screener
+```
+
+### 2. Backend Setup
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create and activate virtual environment
+# Windows (PowerShell):
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Linux / macOS (Bash):
+# python3 -m venv venv
+# source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# (Optional) Copy environment variables
+cp .env.example .env
+```
+
+### 3. Frontend Setup
+```bash
+# Open a new terminal and navigate to frontend directory
+cd smart-resume-screener/frontend
+
+# Install node dependencies
+npm install
+
+# (Optional) Copy environment variables
+cp .env.example .env
+```
+
+---
+
+## ⚙️ 8. Environment Variables
+
+### Backend Configuration (`backend/.env`)
+```env
+# Database connection:
+# SQLite (Local default): sqlite:///./resume_screener.db
+# Neon PostgreSQL (Production): postgresql://user:password@ep-service.neon.tech/neondb?sslmode=require
+DATABASE_URL=sqlite:///./resume_screener.db
+
+# Server Binding (Render automatically injects PORT)
+HOST=0.0.0.0
+PORT=8000
+
+# CORS Allowed Origins (comma-separated list of allowed origins)
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+
+# Optional: LLM Configuration (OpenAI or OpenRouter API key)
+# Leave empty to run autonomously on built-in TF-IDF / rule-based fallback engine
+LLM_API_KEY=
+LLM_MODEL_NAME=gpt-4o-mini
+LLM_BASE_URL=https://api.openai.com/v1
+```
+
+### Frontend Configuration (`frontend/.env`)
+```env
+# Leave empty for local development (Vite automatically proxies /api to http://localhost:8000)
+# Set to your deployed Render URL for production builds
+VITE_API_BASE_URL=
+```
+
+---
+
+## 🚀 9. Running the Application
+
+### Start Backend Service
 ```bash
 cd smart-resume-screener/backend
-python -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-Backend will start on `http://127.0.0.1:8000`.
+- API Documentation (Swagger UI): `http://127.0.0.1:8000/docs`
+- Health Check: `http://127.0.0.1:8000/health`
 
-### 3. Start Frontend Dev Server
+### Start Frontend Application
 ```bash
 cd smart-resume-screener/frontend
 npm run dev
 ```
-Frontend will open on `http://localhost:5173`.
+- Web Application: `http://localhost:5173`
 
-### 4. Run Automated Test Suite (29 Pytest Tests)
+---
+
+## 🧪 10. Automated Testing & Verification
+
+SmartResume AI includes an automated **Pytest** test suite covering text extraction, SHA-256 deduplication, resume quality checks, deterministic math weighting, dynamic weight updates, CSV formula sanitization, health endpoints, and database driver normalization.
+
 ```bash
 cd smart-resume-screener/backend
-python -m pytest
+python -m pytest -v
+```
+
+### Verified Test Results (29/29 Passed)
+```text
+tests/test_screener.py::test_txt_extraction PASSED
+tests/test_screener.py::test_empty_txt_rejection PASSED
+tests/test_screener.py::test_empty_pdf_rejection PASSED
+tests/test_screener.py::test_malformed_pdf_rejection PASSED
+tests/test_screener.py::test_unsupported_file_extension_rejection PASSED
+tests/test_screener.py::test_sha256_hash_consistency PASSED
+tests/test_screener.py::test_sha256_different_files_different_hashes PASSED
+tests/test_screener.py::test_resume_quality_complete_resume PASSED
+tests/test_screener.py::test_resume_quality_missing_contact_info PASSED
+tests/test_screener.py::test_resume_quality_very_short_text PASSED
+tests/test_screener.py::test_deterministic_scoring_math_exact PASSED
+tests/test_screener.py::test_weights_normalization PASSED
+tests/test_screener.py::test_negative_and_zero_weights_fallback PASSED
+tests/test_screener.py::test_why_not_10_missing_skills_flagged PASSED
+tests/test_screener.py::test_rule_based_job_extraction PASSED
+tests/test_screener.py::test_rule_based_candidate_extraction PASSED
+tests/test_screener.py::test_evidence_quote_verification PASSED
+tests/test_screener.py::test_llm_client_fallback_when_unconfigured PASSED
+tests/test_screener.py::test_create_project_and_job_service PASSED
+tests/test_screener.py::test_compare_candidates_service PASSED
+tests/test_screener.py::test_csv_formula_injection_defense PASSED
+tests/test_screener.py::test_csv_export_content_and_headers PASSED
+tests/test_screener.py::test_demo_seeding_idempotence PASSED
+tests/test_screener.py::test_update_project_weights_api PASSED
+tests/test_screener.py::test_health_check_endpoint PASSED
+tests/test_screener.py::test_database_url_postgres_normalization PASSED
+tests/test_screener.py::test_cors_origins_configuration PASSED
+
+======================== 29 passed in 6.27s ========================
 ```
 
 ---
 
-## ☁️ 7. Production Deployment (Vercel + Render + Neon)
+## ☁️ 11. Production Deployment
 
-SmartResume AI is architected for zero-cost, serverless production deployment:
-- **Frontend (Vercel)**: React 19 + Vite SPA with automatic client-side routing via `frontend/vercel.json`.
-- **Backend (Render)**: FastAPI web service with dynamic `$PORT` binding, `/health` endpoint, and CORS management.
-- **Database (Neon PostgreSQL)**: Serverless PostgreSQL with automatic table creation and connection pooling.
+The project is structured for zero-cost, serverless deployment:
+- **Frontend:** [Vercel](https://vercel.com/) (Root: `frontend`, Build: `npm run build`, Rewrites via `frontend/vercel.json`)
+- **Backend:** [Render](https://render.com/) (Root: `backend`, Build: `pip install -r requirements.txt`, Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, Configured via `render.yaml`)
+- **Database:** [Neon PostgreSQL](https://neon.tech/) (Serverless Postgres with TLS and connection pooling)
 
-For complete step-by-step setup, see [DEPLOYMENT.md](file:///C:/Users/shubh/Downloads/smart-resume-screener/DEPLOYMENT.md).
+Detailed step-by-step instructions with environment variable references are documented in [DEPLOYMENT.md](file:///C:/Users/shubh/Downloads/smart-resume-screener/DEPLOYMENT.md).
 
 ---
 
-## 🌐 8. API Reference
+## 📡 12. REST API Reference
 
 | Endpoint | Method | Description |
 | :--- | :---: | :--- |
-| `/api/projects` | `GET` / `POST` | List all projects or create a new screening project |
-| `/api/projects/{id}` | `GET` | Get project detail with target job and candidate ranking |
-| `/api/projects/{id}/weights` | `PUT` | Persist custom scoring weights and recalculate candidate rankings |
-| `/api/jobs` | `POST` | Analyze and save job description (Required vs Preferred skills) |
-| `/api/resumes/upload` | `POST` | Upload and parse multiple resumes (PDF/TXT) with SHA-256 deduplication |
-| `/api/screening/{id}/run` | `POST` | Execute screening and scoring across all project candidates |
-| `/api/candidates/{id}` | `GET` | Get detailed candidate inspector profile with score breakdown |
-| `/api/candidates/{id}/status` | `POST` | Update candidate status (`SHORTLISTED`, `REJECTED`, `UNDER_REVIEW`) |
-| `/api/candidates/{id}/notes` | `POST` | Record persistent recruiter interview notes |
-| `/api/candidates/compare` | `POST` | Compare up to 3 candidates side-by-side with trade-off analysis |
-| `/api/analytics/{id}` | `GET` | Aggregated project skill coverage and missing skill gaps |
-| `/api/export/{id}/csv` | `GET` | Download sanitized CSV candidate screening report |
-| `/api/demo/load` | `POST` | Seed calibrated demo project with 5 dynamic candidate profiles |
+| `/` or `/health` | `GET` | Health check endpoint returning service status and versions |
+| `/api/projects` | `GET` | List all screening projects with candidate counts |
+| `/api/projects` | `POST` | Create a new screening project |
+| `/api/projects/{id}` | `GET` | Retrieve project details, job data, and candidate ranking |
+| `/api/projects/{id}/weights` | `PUT` | Persist custom scoring weights and trigger candidate score recalculation |
+| `/api/jobs` | `POST` | Parse and persist a job description with required and preferred skills |
+| `/api/resumes/upload` | `POST` | Multi-file resume upload (`multipart/form-data`) with deduplication |
+| `/api/screening/{id}/run` | `POST` | Execute scoring pipeline across uploaded project candidates |
+| `/api/candidates/{id}` | `GET` | Detailed candidate inspection (scores, evidence snippets, gaps) |
+| `/api/candidates/{id}/status` | `POST` | Update candidate status (`SHORTLISTED`, `CONSIDER`, `REJECTED`, etc.) |
+| `/api/candidates/{id}/notes` | `POST` | Append timestamped recruiter interview notes |
+| `/api/candidates/compare` | `POST` | Compare 2–3 candidates side-by-side with trade-off analysis |
+| `/api/analytics/{id}` | `GET` | Aggregate skill penetration and cohort missing skill analysis |
+| `/api/export/{id}/csv` | `GET` | Download sanitized CSV screening report (formula injection protected) |
+| `/api/demo/load` | `POST` | Idempotently seed calibrated demo project with 5 candidate profiles |
 
 ---
 
-## 🎬 9. Evaluator Demo Flow
+## 🔒 13. Security Considerations & System Limitations
 
-1. Open `http://localhost:5173` to view the **SmartResume AI Landing Page**.
-2. Click **"TRY DEMO"** to automatically seed a "Senior Backend Software Engineer" project with 5 candidates.
-3. Review the **AI-Extracted Job Analysis** displaying `REQUIRED` vs `PREFERRED` skills.
-4. Inspect the dynamic ranking:
-   - **Alex Rivera (8.0 — Strong Match)**: Senior Cloud Backend Engineer.
-   - **Priya Sharma (7.5 — Consider)**: Backend Developer missing AWS cloud certifications.
-   - **Marcus Chen (6.0 — Consider)**: Transferable Java/Spring background.
-   - **Elena Rostova (5.3 — Low Match)**: Systems engineer with partial overlap.
-   - **David Miller (3.6 — Low Match)**: Junior Web UI designer (mismatch).
-5. Click **"Scoring Weights"** in the toolbar to adjust weights and click **"Save & Re-Score"** to see live ranking recalculations.
-6. Select 2-3 candidates with checkboxes and click **"Compare (3/3)"** for side-by-side trade-off analysis.
-7. Click **"Inspect"** on any candidate to view radial score wheels, quote evidence, and **"WHY NOT 10/10?"**.
-8. Click **"Export CSV"** to download the sanitized candidate spreadsheet.
+### Security Hardening
+- **CSV Formula Injection Mitigation:** Neutralizes formula execution vectors (`=`, `+`, `-`, `@`, `\t`, `\r`) in spreadsheets by prepending single quotes to export cells.
+- **Upload Filename Sanitization:** Strips directory traversal sequences (`../`, `..\`) and control characters prior to database recording.
+- **Safe CORS Configuration:** Whitelists specific frontend origins through environment variables, preventing wildcard access with credentials.
+- **Memory-Safe File Handling:** Parses document streams in memory without writing temporary files to local disk.
+
+### Responsible AI & Ethical Boundaries
+- **Human-in-the-Loop:** Designed strictly as a **decision-support tool** for human recruiters; not intended for automated hiring or rejection without human review.
+- **Protected Attribute Exclusion:** Evaluates only documented professional competencies, project evidence, and verified educational credentials. Scoring explicitly excludes age, gender, race, photos, marital status, and personal identifiers.
+- **Single-User Architecture:** Multi-tenant authorization and Role-Based Access Control (RBAC) are omitted from the current version.
 
 ---
 
-## 🛡️ 10. Ethics, Responsible AI & Limitations
+## 👨‍💻 14. Author & Contact
 
-- **Decision-Support Tool**: SmartResume AI generates decision-support signals to assist human recruiters and **should not replace human judgment**. The tool does not claim to eliminate human bias or make hiring decisions autonomously.
-- **Fairness by Design**: Scoring explicitly excludes protected personal attributes including gender, race, age, religion, photos, marital status, and political affiliations.
-- **Verifiable Evidence**: Every match quote originates directly from candidate text. Missing information is never treated as definitive proof of absence; candidates may possess skills not documented on their resume.
-- **Single-User Architecture**: Multi-tenant authorization and role-based access control (RBAC) are not implemented in this version.
+**Shubh Sharma**  
+- **GitHub:** [@shubh201203](https://github.com/shubh201203)  
+- **Portfolio:** [https://shubh201203.github.io/portfolio/](https://shubh201203.github.io/portfolio/)  
+- **LinkedIn:** [https://www.linkedin.com/in/shubh-sharma-2067981b5](https://www.linkedin.com/in/shubh-sharma-2067981b5)  
+- **Project Repository:** [https://github.com/shubh201203/smart-resume-screener](https://github.com/shubh201203/smart-resume-screener)
