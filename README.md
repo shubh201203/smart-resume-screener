@@ -9,10 +9,13 @@
 [![SQLAlchemy](https://img.shields.io/badge/ORM-SQLAlchemy_2.0-D71F00?style=flat)](https://www.sqlalchemy.org/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_|_SQLite-4169E1?style=flat&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![Pytest](https://img.shields.io/badge/Tests-29%20Passed-brightgreen?style=flat&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-success?style=flat&logo=vercel&logoColor=white)](https://smart-resume-screener-pi.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > A full-stack, data-driven recruitment intelligence platform combining hybrid AI parsing, deterministic math-based candidate scoring, direct textual evidence extraction, and recruiter analytics.
 
+**Live Demo:** [https://smart-resume-screener-pi.vercel.app/](https://smart-resume-screener-pi.vercel.app/)  
+**Backend API:** [https://smart-resume-screener-qlag.onrender.com/health](https://smart-resume-screener-qlag.onrender.com/health)  
 **Repository:** [https://github.com/shubh201203/smart-resume-screener](https://github.com/shubh201203/smart-resume-screener)  
 **Developer:** [Shubh Sharma](https://github.com/shubh201203) | [Portfolio](https://shubh201203.github.io/portfolio/) | [LinkedIn](https://www.linkedin.com/in/shubh-sharma-2067981b5)  
 **Target Roles:** Data Analyst Intern · Python Developer Intern · AI/ML Intern
@@ -283,10 +286,10 @@ tests/test_screener.py::test_cors_origins_configuration PASSED
 
 ## ☁️ 11. Production Deployment
 
-The project is structured for zero-cost, serverless deployment:
-- **Frontend:** [Vercel](https://vercel.com/) (Root: `frontend`, Build: `npm run build`, Rewrites via `frontend/vercel.json`)
-- **Backend:** [Render](https://render.com/) (Root: `backend`, Build: `pip install -r requirements.txt`, Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, Configured via `render.yaml`)
-- **Database:** [Neon PostgreSQL](https://neon.tech/) (Serverless Postgres with TLS and connection pooling)
+The project is structured and deployed on a zero-cost, serverless architecture:
+- **Live Frontend:** [https://smart-resume-screener-pi.vercel.app/](https://smart-resume-screener-pi.vercel.app/) deployed on [Vercel](https://vercel.com/) (Root: `frontend`, Build: `npm run build`, Rewrites via `frontend/vercel.json`)
+- **Backend API:** [https://smart-resume-screener-qlag.onrender.com/health](https://smart-resume-screener-qlag.onrender.com/health) deployed on [Render](https://render.com/) (Root: `backend`, Build: `pip install -r requirements.txt`, Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, Configured via `render.yaml`)
+- **Database:** Serverless PostgreSQL on [Neon](https://neon.tech/) with TLS and resilient connection pooling (`pool_pre_ping=True`, `pool_recycle=300`)
 
 Detailed step-by-step instructions with environment variable references are documented in [DEPLOYMENT.md](file:///C:/Users/shubh/Downloads/smart-resume-screener/DEPLOYMENT.md).
 

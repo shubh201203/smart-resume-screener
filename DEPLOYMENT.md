@@ -66,7 +66,7 @@ flowchart LR
    | :--- | :--- | :--- |
    | `PYTHON_VERSION` | `3.11.9` | Matches Python version |
    | `DATABASE_URL` | `postgresql://...` | Connection string copied from Neon |
-   | `CORS_ORIGINS` | `https://your-frontend.vercel.app,http://localhost:5173` | Allowed frontend domains (update with your actual Vercel URL after Step 3) |
+   | `CORS_ORIGINS` | `https://smart-resume-screener-pi.vercel.app,http://localhost:5173` | Allowed frontend domains (include your production Vercel URL) |
    | `LLM_API_KEY` | *(Optional)* | Your OpenAI / OpenRouter API Key |
    | `LLM_MODEL_NAME` | `gpt-4o-mini` | Default LLM model |
    | `LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI / OpenRouter endpoint |
@@ -98,12 +98,12 @@ A ready-to-use `render.yaml` specification is included in the root directory. In
    Under **Environment Variables**, add:
    | Key | Value | Description |
    | :--- | :--- | :--- |
-   | `VITE_API_BASE_URL` | `https://smart-resume-screener-api.onrender.com` | URL of your deployed Render backend |
+   | `VITE_API_BASE_URL` | `https://smart-resume-screener-qlag.onrender.com` | URL of your deployed Render backend |
 
 6. **Deploy**:
    - Click **Deploy**.
    - Vercel will install dependencies, execute `tsc -b && vite build`, and publish the production bundle.
-   - Once deployed, copy your Vercel deployment URL (e.g., `https://smart-resume-screener.vercel.app`).
+   - Once deployed, copy your Vercel deployment URL: `https://smart-resume-screener-pi.vercel.app/`.
 
 ---
 
@@ -114,7 +114,7 @@ Once your Vercel frontend is live:
 2. Go to your backend service > **Environment**.
 3. Update `CORS_ORIGINS` to include your production Vercel URL:
    ```text
-   https://smart-resume-screener.vercel.app,http://localhost:5173
+   https://smart-resume-screener-pi.vercel.app,http://localhost:5173
    ```
 4. Click **Save Changes** (Render will automatically re-deploy with updated CORS).
 
@@ -124,7 +124,7 @@ Once your Vercel frontend is live:
 
 ### 1. Verify Backend Health Check
 ```bash
-curl https://smart-resume-screener-api.onrender.com/health
+curl https://smart-resume-screener-qlag.onrender.com/health
 ```
 Expected response:
 ```json

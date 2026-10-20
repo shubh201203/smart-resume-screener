@@ -380,9 +380,9 @@ def test_database_url_postgres_normalization():
 
 def test_cors_origins_configuration():
     from app.core.config import Settings
-    s = Settings(CORS_ORIGINS="https://smart-resume.vercel.app, http://localhost:5173")
+    s = Settings(CORS_ORIGINS="https://smart-resume-screener-pi.vercel.app, http://localhost:5173")
     origins = s.cors_origins_list
-    assert "https://smart-resume.vercel.app" in origins
+    assert "https://smart-resume-screener-pi.vercel.app" in origins
     assert "http://localhost:5173" in origins
     assert len(origins) == 2
 
